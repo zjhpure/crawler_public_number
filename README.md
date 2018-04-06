@@ -1,3 +1,6 @@
+详细介绍请看https://www.jianshu.com/p/667f3668cd70
+
+
 ## 环境准备
 + 一台爬虫服,python3环境,建议在ubuntu16.04下,不用再装一次python3
 + 一台代理服,root权限,anyproxy环境和pm2环境,要先装好npm然后node才能装anyproxy,pm2是用来控制anyproxy的,不知为什么用nohup无法做到关闭终端也运行anyproxy
