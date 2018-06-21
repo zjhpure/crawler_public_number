@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import json
 
 from cfg.cfg import redis_db, api_port
@@ -10,20 +10,26 @@ app = Flask(__name__)
 
 @app.route('/')
 def hello():
-    return 'Hello World!'
+    return 'hello world!'
 
 
-@app.route('/crawl_pub/get_pub', methods=['GET', 'POST'])
-def get_pub():
+@app.route('/crawler/public_number/get_click_public_number', methods=['GET', 'POST'])
+def get_click_public_number():
     # 连接redis
     redis = StrictRedis(host=redis_db['host'], port=redis_db['port'], password=redis_db['password'])
-    if redis.llen('crawl_pub') > 0:
+    if redis.llen('public_number') > 0:
         # redis长度不为0,从左pop出数据,按键精灵可以点击
-        info = str(redis.lpop('crawl_pub'), encoding='utf-8')
+        info = str(redis.lpop('public_number'), encoding='utf-8')
         info = info.split('&&')
         print(info)
+        # data = {"errcode": 0, "msg": "获取公众号成功",
+        #         "result": {"public_number_name": info[0],
+        #                    "public_number_wechat_id": info[1],
+        #                    "public_number_biz": info[2]}}
         data = {"errcode": 0, "msg": "获取公众号成功",
-                "result": {"pub_name": info[0], "pub_wx_id": info[1], "pub_biz": info[2]}}
+                "result": {"publicNumberName": info[0],
+                           "publicNumberWechatId": info[1],
+                           "publicNumberBiz": info[2]}}
     else:
         # redis长度为0,按键精灵不用点击
         data = {"errcode": 1, "msg": "无公众号获取"}

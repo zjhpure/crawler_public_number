@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import datetime
 import json
 import random
@@ -14,7 +14,7 @@ from cfg.cfg import redis_db
 from db.mysql_operate import MysqlOperate
 
 
-class WechatPubArticleSpider(object):
+class PublicNumberSpider(object):
     headers = {
         'Host': 'mp.weixin.qq.com',
         'Connection': 'keep-alive',
@@ -40,32 +40,37 @@ class WechatPubArticleSpider(object):
             headers['Cookie'] = cookie
             biz = url.split('&')[1].split('biz=')[1]
             # 通过biz值查询数据库里是否有今天未爬取的此公众号
-            result = self.mysql_operate.query_pub_by_biz(biz=biz)
+            result = self.mysql_operate.query_public_number_by_biz(public_number_biz=biz)
             self.print_with_time(result)
             if len(result) > 0:
                 row = result[0]
-                pub_id = row[0]
-                pub_wx_id = row[1]
-                pub_name = row[2]
+                public_number_id = row[0]
+                public_number_wechat_id = row[1]
+                public_number_name = row[2]
                 try:
-                    self.print_with_time('pub_wx_id:' + pub_wx_id + ' pub_name:' + pub_name)
+                    self.print_with_time('public_number_wechat_id:' + public_number_wechat_id
+                                         + ' public_number_name:' + public_number_name)
                     response = requests.request('GET', url, headers=headers)
-                    meta = {'pub_wx_id': pub_wx_id, 'pub_name': pub_name, 'pub_id': pub_id}
+                    meta = {'public_number_wechat_id': public_number_wechat_id,
+                            'public_number_name': public_number_name,
+                            'public_number_id': public_number_id}
                     article_num = self.parse(response, meta)
                     # 若今天的文章数量为0,可能公众号还没有发表文章
                     if article_num > 0:
                         # 今天已爬取,标记为1,这里一旦有一次今天爬取成功了,就标记为今天已爬取
                         # 大多数公众号一天只能发文一次,除了少数早期的公众号可以发文多次,新申请应该都是一天只能发文一次
-                        self.mysql_operate.update_pub_today_is_crawl(pub_wx_id=str(pub_wx_id), today_is_crawl=str(1))
+                        self.mysql_operate.update_public_number_today_is_crawl(
+                            public_number_wechat_id=str(public_number_wechat_id), today_is_crawl=str(1))
                     # 录入爬取记录,1为爬取成功
-                    self.mysql_operate.insert_crawl_record(pub_id=pub_id, crawl_status=1)
+                    self.mysql_operate.insert_crawl_record(public_number_id=public_number_id, crawl_status=1)
                 except Exception as e:
                     self.print_with_time(e)
                     traceback.print_exc()
                     self.print_with_time(
-                        'crawl failure, ' + 'pub_wx_id:' + pub_wx_id + ', pub_name:' + pub_name)
+                        'crawler failure, ' + 'public_number_wechat_id:' + public_number_wechat_id
+                        + ', public_number_name:' + public_number_name)
                     # 录入爬取记录,0为爬取失败
-                    self.mysql_operate.insert_crawl_record(pub_id=pub_id, crawl_status=0)
+                    self.mysql_operate.insert_crawl_record(public_number_id=public_number_id, crawl_status=0)
 
     def parse(self, response, meta):
         # print(response.text)
@@ -138,9 +143,9 @@ class WechatPubArticleSpider(object):
         return article_today_num
 
     def get_pub_article(self, response, meta):
-        pub_id = meta['pub_id']
-        pub_wx_id = meta['pub_wx_id']
-        pub_name = meta['pub_name']
+        public_number_id = meta['public_number_id']
+        public_number_wechat_id = meta['public_number_wechat_id']
+        public_number_name = meta['public_number_name']
         # 把响应返回的文本转换为结点对象,xpath方法要用结点对象
         html = etree.HTML(response.text)
         # 若文章是转载的
@@ -152,13 +157,15 @@ class WechatPubArticleSpider(object):
             self.get_pub_article(response, meta)
         # 若文章不是转载的
         else:
-            pub_article_title = html.xpath('//*[@id="activity-name"]/text()')[0].strip()
-            self.print_with_time('pub_article_title:' + pub_article_title)
-            pub_article_publish_time = html.xpath('//*[@id="post-date"]/text()')[0].strip()
-            self.print_with_time('pub_article_publish_time:' + pub_article_publish_time)
-            count = self.mysql_operate.query_article(pub_wx_id=pub_wx_id, pub_article_title=pub_article_title,
-                                                     pub_article_publish_time=pub_article_publish_time)
-            self.print_with_time('pub_wx_id:' + pub_wx_id + ' pub_name:' + pub_name)
+            public_number_article_title = html.xpath('//*[@id="activity-name"]/text()')[0].strip()
+            self.print_with_time('public_number_article_title:' + public_number_article_title)
+            public_number_article_publish_time = html.xpath('//*[@id="post-date"]/text()')[0].strip()
+            self.print_with_time('public_number_article_publish_time:' + public_number_article_publish_time)
+            count = self.mysql_operate.query_public_number_article(public_number_wechat_id=public_number_wechat_id,
+                                                                   public_number_article_title=public_number_article_title,
+                                                                   public_number_article_publish_time=public_number_article_publish_time)
+            self.print_with_time(
+                'public_number_wechat_id:' + public_number_wechat_id + ' public_number_name:' + public_number_name)
             # 通过比较文章的标题和发表时间来判断文章是否已经爬取过,以爬取过的不再爬取
             if count <= 0:
                 # 爬取文章封面
@@ -168,17 +175,20 @@ class WechatPubArticleSpider(object):
                 # 这里说明一下,封面和文章内容,需要下载下来,然后上传到云存储上(比如:七牛云),这里就不详细解说了
                 # response.text可以获取到文章内容
                 # 文章信息录入数据库
-                self.mysql_operate.insert_article(pub_wx_id=pub_wx_id, pub_name=pub_name,
-                                                  pub_article_title=pub_article_title,
-                                                  pub_article_publish_time=pub_article_publish_time,
-                                                  pub_article_content_url=pub_article_content_url,
-                                                  pub_article_cover=pub_article_cover)
+                self.mysql_operate.insert_public_number_article(public_number_wechat_id=public_number_wechat_id,
+                                                                public_number_name=public_number_name,
+                                                                public_number_article_title=public_number_article_title,
+                                                                public_number_article_publish_time=public_number_article_publish_time,
+                                                                public_number_article_content_url=pub_article_content_url,
+                                                                public_number_article_cover=pub_article_cover)
                 self.print_with_time(
-                    'pub_id:' + str(pub_id) + ' pub_wx_id:' + pub_wx_id + ' pub_name:' + pub_name +
-                    ' pub_article_title:' + pub_article_title +
-                    ' pub_article_publish_time:' + pub_article_publish_time +
-                    ' pub_article_content_url:' + pub_article_content_url +
-                    ' pub_article_cover:' + pub_article_cover)
+                    'public_number_id:' + str(public_number_id)
+                    + ' public_number_wechat_id:' + public_number_wechat_id
+                    + ' public_number_name:' + public_number_name
+                    + ' public_number_article_title:' + public_number_article_title
+                    + ' public_number_article_publish_time:' + public_number_article_publish_time
+                    + ' pub_article_content_url:' + pub_article_content_url
+                    + ' pub_article_cover:' + pub_article_cover)
 
     def operate_redis(self):
         x_wechat_key = None
@@ -192,7 +202,7 @@ class WechatPubArticleSpider(object):
             # 连接redis
             redis = StrictRedis(host=redis_db['host'], port=redis_db['port'], password=redis_db['password'])
             # 从左边pop出数据,b表示若没有数据,则会一直堵塞等待
-            info = str(redis.blpop('crawl_pub_click')[1], encoding='utf-8')
+            info = str(redis.blpop('click_public_number')[1], encoding='utf-8')
             info = info.split('&&')
             self.print_with_time(info)
             # 获取从anyproxy拦截公众号历史消息请求时储存在redis上的时间戳
@@ -217,7 +227,7 @@ class WechatPubArticleSpider(object):
                 self.print_with_time('user_agent: ' + user_agent)
                 self.print_with_time('cookie: ' + cookie)
                 self.print_with_time('time: ' + t)
-        self.print_with_time('get pub headers by redis success')
+        self.print_with_time('get public_number headers by redis success')
         return x_wechat_key, x_wechat_uin, user_agent, cookie, url
 
     @staticmethod
@@ -227,5 +237,5 @@ class WechatPubArticleSpider(object):
 
 
 if __name__ == '__main__':
-    wechat_pub_article = WechatPubArticleSpider()
-    wechat_pub_article.start_requests()
+    public_number_spider = PublicNumberSpider()
+    public_number_spider.start_requests()

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 api_port = 10002
 
 redis_db = {
@@ -11,6 +11,6 @@ mysql_db = {
     'host': 'localhost',
     'user': 'root',
     'password': '123456',
-    'db': 'crawl_wx_pub',
+    'db': 'crawler_public_number',
     'port': 3306
 }

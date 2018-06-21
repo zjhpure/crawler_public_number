@@ -3,11 +3,11 @@ function sendToRedis(x_wechat_key, x_wechat_uin, user_agent, cookie, url) {
     client = redis.createClient(6379, 'localhost', {});
     client.auth('123456');
     client.on("error", function (err) {
-        console.log("Error " + err);
+        console.log("error:" + err);
     });
     var now = Math.round(new Date().getTime() / 1000)
     console.log(now);
-    client.rpush('crawl_pub_click', x_wechat_key + '&&' + x_wechat_uin + '&&' + user_agent + '&&' + cookie + '&&' + now + '&&' + url, redis.print)
+    client.rpush('click_public_number', x_wechat_key + '&&' + x_wechat_uin + '&&' + user_agent + '&&' + cookie + '&&' + now + '&&' + url, redis.print)
     client.quit();
 };
 

@@ -1,4 +1,4 @@
-# -*- coding: utf-8 -*-
+# coding: utf-8
 import datetime
 import time
 
@@ -7,7 +7,7 @@ from db.mysql_operate import MysqlOperate
 
 
 # 每天凌晨重置所有公众号的今天是否已爬取为0
-class ResetCrawl(object):
+class ResetCrawler(object):
     mysql_operate = MysqlOperate()
 
     def run(self):
@@ -21,7 +21,7 @@ class ResetCrawl(object):
             # 若小时数为00,则证明已经到了凌晨
             if '00' == hour:
                 # 重置所有公众号的今天是否已爬取为0
-                self.mysql_operate.reset_all_pub_today_is_crawl()
+                self.mysql_operate.reset_all_public_number_today_is_crawl()
                 self.print_with_time('sleep 4000s')
                 # 执行完就休眠一个小时,一天只重置一次
                 time.sleep(4000)
@@ -33,5 +33,5 @@ class ResetCrawl(object):
 
 
 if __name__ == '__main__':
-    reset_crawl = ResetCrawl()
-    reset_crawl.run()
+    reset_crawler = ResetCrawler()
+    reset_crawler.run()

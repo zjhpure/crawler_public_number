@@ -1,5 +1,7 @@
 #! /bin/bash
 
+ROOT=/data/crawler/crawler_public_number
+
 assist() {
     echo """
          start                   使用生产配置启动进程
@@ -10,25 +12,25 @@ assist() {
 }
 
 start() {
-    rm -rf ./cfg/cfg.py
-    cp ./cfg/cfg_prod.py ./cfg/cfg.py
-    nohup python3 -u ./start.py &
+    rm -rf ${ROOT}/cfg/cfg.py
+    cp ${ROOT}/cfg/cfg_prod.py ${ROOT}/cfg/cfg.py
+    nohup python3 -u ${ROOT}/start.py &
 }
 
 stop() {
-    pid=$(ps -ef | grep ./start.py | grep -v grep | awk '{print $2}')
+    pid=$(ps -ef | grep ${ROOT}/start.py | grep -v grep | awk '{print $2}')
     [ -n "${pid}" ] && kill -9 ${pid}
     echo "已关闭：${pid}"
 }
 
 start_api() {
-    rm -rf ./cfg/cfg.py
-    cp ./cfg/cfg_prod.py ./cfg/cfg.py
-    nohup python3 -u ./api.py &
+    rm -rf ${ROOT}/cfg/cfg.py
+    cp ${ROOT}/cfg/cfg_prod.py ${ROOT}/cfg/cfg.py
+    nohup python3 -u ${ROOT}/api.py &
 }
 
 stop_api() {
-    pid=$(ps -ef | grep ./api.py | grep -v grep | awk '{print $2}')
+    pid=$(ps -ef | grep ${ROOT}/api.py | grep -v grep | awk '{print $2}')
     [ -n "${pid}" ] && kill -9 ${pid}
     echo "已关闭：${pid}"
 }
